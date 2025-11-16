@@ -205,7 +205,7 @@ const AboutPage = () => {
                 data-aos="fade-right"
                 data-aos-duration="1300"
               >
-                Eki Zulfar Rachman
+                Moh Asrori
               </span>
             </h2>
             
@@ -214,7 +214,12 @@ const AboutPage = () => {
               data-aos="fade-right"
               data-aos-duration="1500"
             >
-             Seorang lulusan Teknik Jaringan Komputer dan Telekomunikasi yang memiliki ketertarikan besar dalam pengembangan Front-End. Saya berfokus pada menciptakan pengalaman digital yang menarik dan selalu berusaha memberikan solusi terbaik dalam setiap proyek yang saya kerjakan.
+             Saya adalah seorang Mobile & Backend Developer dengan pengalaman dalam membangun aplikasi Android menggunakan Kotlin serta mengembangkan backend menggunakan Laravel dan RESTful API. 
+             Berpengalaman dalam pengembangan aplikasi end-to-end melalui magang, proyek akademik, dan capstone Bangkit Academy.
+
+            <br /> Saya menikmati proses mengubah kebutuhan menjadi solusi digital yang fungsional, scalable, dan mudah digunakan, serta memiliki ketertarikan kuat dalam meningkatkan kualitas aplikasi melalui clean code, API integration, dan arsitektur yang efisien.
+
+            <br /> Saya siap berkontribusi dalam lingkungan profesional, belajar teknologi baru, dan mengerjakan proyek yang memberikan dampak nyata.
             </p>
 
                {/* Quote Section */}
@@ -235,7 +240,7 @@ const AboutPage = () => {
         </div>
         
         <blockquote className="text-gray-300 text-center lg:text-left italic font-medium text-sm relative z-10 pl-6">
-          "Leveraging AI as a professional tool, not a replacement."
+          "Building impactful digital products through simplicity, consistency, and thoughtful engineering."
         </blockquote>
       </div>
 
