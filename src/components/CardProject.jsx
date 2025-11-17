@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, ArrowRight } from 'lucide-react';
 
 const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   // Handle kasus ketika ProjectLink kosong
   const handleLiveDemo = (e) => {
     if (!ProjectLink) {
@@ -28,12 +30,25 @@ const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
     
         <div className="relative p-5 z-10">
-          <div className="relative overflow-hidden rounded-lg h-48 md:h-56 bg-gray-800">
-            <img
-              src={Img}
-              alt={Title}
-              className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500"
-            />
+          {/* responsive container: aspect-ratio keeps height proportional to width (follows grid) */}
+          <div className="relative overflow-hidden rounded-lg w-full" style={{ aspectRatio: '16/9' }}>
+            {/* skeleton while image is loading */}
+            {!imgLoaded && (
+              <div className="absolute inset-0 bg-gray-700/60 animate-pulse" aria-hidden="true" />
+            )}
+
+            {Img ? (
+              <img
+                src={Img}
+                alt={Title}
+                loading="lazy"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgLoaded(true)}
+                className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-700 text-white">No image</div>
+            )}
           </div>
           
           <div className="mt-4 space-y-3">
