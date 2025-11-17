@@ -110,7 +110,7 @@ const ProjectDetails = () => {
         ...selectedProject,
         Features: selectedProject.Features || [],
         TechStack: selectedProject.TechStack || [],
-        Github: selectedProject.Github || 'https://github.com/EkiZR',
+        Github: selectedProject.Github || 'https://github.com/azrxr',
       };
       setProject(enhancedProject);
     }
@@ -160,7 +160,7 @@ const ProjectDetails = () => {
             <div className="space-y-6 md:space-y-10 animate-slideInLeft">
               <div className="space-y-4 md:space-y-6">
                 <h1 className="text-3xl md:text-6xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight">
-                  {project.Title}
+                  {project.Title} 
                 </h1>
                 <div className="relative h-1 w-16 md:w-24">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" />
@@ -168,9 +168,21 @@ const ProjectDetails = () => {
                 </div>
               </div>
 
+              {/* <div className="space-y-4 md:space-y-6">
+                <h3 className="text-lg md:text-m font-semibold text-white/90 mt-[3rem] md:mt-0 flex items-center gap-2 md:gap-3">
+                  <Code2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                  Project Type
+                </h3>
+                  <div className="flex flex-wrap gap-2 md:gap-3">
+                    
+                      <TechBadge tech={project.ProjectType} /> 
+                    
+                  </div>
+              </div> */}
+
               <div className="prose prose-invert max-w-none">
                 <p className="text-base md:text-lg text-gray-300/90 leading-relaxed">
-                  {project.Description}
+                {project.Description}
                 </p>
               </div>
 
