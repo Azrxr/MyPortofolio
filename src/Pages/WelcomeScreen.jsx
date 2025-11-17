@@ -145,14 +145,14 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
               </motion.div>
 
               {/* Website Link */}
-              {/* <motion.div 
+              <motion.div 
                 className="text-center"
                 variants={childVariants}
                 data-aos="fade-up"
                 data-aos-delay="1200"
               >
                 <a
-                  href="https://www.eki.my.id"
+                  href="https://www.azrxr.my.id"
                   className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full relative group hover:scale-105 transition-transform duration-300"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -165,7 +165,7 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
                     </span>
                   </div>
                 </a>
-              </motion.div> */}
+              </motion.div>
             </div>
           </div>
         </motion.div>
