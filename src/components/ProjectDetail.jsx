@@ -47,6 +47,20 @@ const FeatureItem = ({ feature }) => {
   );
 };
 
+const RoleBadge = ({ role }) => (
+  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-600/10 to-blue-600/10 border border-white/10 rounded-full text-sm text-white/90">
+    <Code2 className="w-4 h-4 text-green-300" />
+    <span className="font-medium text-xs md:text-sm">{role}</span>
+  </div>
+);
+
+const CompanyBadge = ({ name }) => (
+  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-white/90">
+    <Globe className="w-4 h-4 text-indigo-300" />
+    <span className="font-medium text-xs md:text-sm truncate">{name}</span>
+  </div>
+);
+
 const ProjectStats = ({ project }) => {
   const techStackCount = project?.TechStack?.length || 0;
   const featuresCount = project?.Features?.length || 0;
@@ -106,11 +120,29 @@ const ProjectDetails = () => {
     const selectedProject = storedProjects.find((p) => String(p.id) === id);
     
     if (selectedProject) {
+      const parseJsonSafe = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string') {
+          try {
+            const parsed = JSON.parse(val);
+            return Array.isArray(parsed) ? parsed : [parsed];
+          } catch (e) {
+            return [val];
+          }
+        }
+        return [val];
+      };
+
       const enhancedProject = {
         ...selectedProject,
         Features: selectedProject.Features || [],
         TechStack: selectedProject.TechStack || [],
         Github: selectedProject.Github || 'https://github.com/azrxr',
+        ProjectType: selectedProject.ProjectType || '',
+        CompanyOrOrganization: selectedProject.CompanyOrOrganization || '',
+        MyRole: parseJsonSafe(selectedProject.MyRole),
+        Responsibilities: parseJsonSafe(selectedProject.Responsibilities),
       };
       setProject(enhancedProject);
     }
@@ -168,6 +200,19 @@ const ProjectDetails = () => {
                 </div>
               </div>
 
+              {/* Project meta: type & company */}
+              <div className="flex flex-wrap gap-3 mt-3 items-center">
+                {project.ProjectType && (
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${project.ProjectType.toLowerCase() === 'personal' ? 'bg-green-600/10 text-green-300 border border-green-500/10' : 'bg-purple-600/10 text-purple-300 border border-purple-500/10'}`}>
+                    <span className="uppercase">{project.ProjectType}</span>
+                  </div>
+                )}
+
+                {project.CompanyOrOrganization && (
+                  <CompanyBadge name={project.CompanyOrOrganization} />
+                )}
+              </div>
+
               {/* <div className="space-y-4 md:space-y-6">
                 <h3 className="text-lg md:text-m font-semibold text-white/90 mt-[3rem] md:mt-0 flex items-center gap-2 md:gap-3">
                   <Code2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
@@ -184,6 +229,39 @@ const ProjectDetails = () => {
                 <p className="text-base md:text-lg text-gray-300/90 leading-relaxed">
                 {project.Description}
                 </p>
+              </div>
+
+              {/* Roles & Responsibilities */}
+              <div className="mt-6 space-y-4">
+                <h3 className="text-lg md:text-xl font-semibold text-white/90 flex items-center gap-2 md:gap-3">
+                  <Code2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                  Role & Responsibilities
+                </h3>
+
+                <div className="flex flex-wrap gap-2">
+                  {project.MyRole && project.MyRole.length > 0 ? (
+                    project.MyRole.map((role, idx) => (
+                      <RoleBadge key={idx} role={role} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400">No role specified.</p>
+                  )}
+                </div>
+
+                <div>
+                  {project.Responsibilities && project.Responsibilities.length > 0 ? (
+                    <ul className="list-none space-y-2 mt-2">
+                      {project.Responsibilities.map((r, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <ChevronRight className="w-4 h-4 text-purple-400 mt-1" />
+                          <p className="text-sm md:text-base text-gray-300">{r}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-400">No responsibilities listed.</p>
+                  )}
+                </div>
               </div>
 
               <ProjectStats project={project} />
