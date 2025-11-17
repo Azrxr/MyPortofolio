@@ -102,8 +102,8 @@ function a11yProps(index) {
   };
 }
 
-// techStacks tetap sama
-const techStacks = [
+// Default fallback tech stacks (used until Supabase returns data)
+const DEFAULT_TECH_STACKS = [
   { icon: "html.svg", language: "HTML" },
   { icon: "css.svg", language: "CSS" },
   { icon: "javascript.svg", language: "JavaScript" },
@@ -123,6 +123,7 @@ export default function FullWidthTabs() {
   const [value, setValue] = useState(0);
   const [projects, setProjects] = useState([]);
   const [certificates, setCertificates] = useState([]);
+  const [techStacks, setTechStacks] = useState([]);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllCertificates, setShowAllCertificates] = useState(false);
   const isMobile = window.innerWidth < 768;
@@ -141,22 +142,35 @@ export default function FullWidthTabs() {
       const [projectsResponse, certificatesResponse] = await Promise.all([
         supabase.from("projects").select("*").order('id', { ascending: true }),
         supabase.from("certificates").select("*").order('id', { ascending: true }), 
+        supabase.from("tech_stack").select("title,img").order('id', { ascending: true }),
       ]);
 
       // Error handling untuk setiap request
       if (projectsResponse.error) throw projectsResponse.error;
       if (certificatesResponse.error) throw certificatesResponse.error;
+      // tech_stack response is the third in the array
+      const techResponse = Array.isArray(projectsResponse) ? null : null;
+
+      // Note: Promise.all returns array values, but we destructured into named variables above.
+      // To get tech stack data, call supabase separately if needed.
+
+      // Fetch tech_stack separately to avoid destructuring confusion
+      const techRes = await supabase.from("tech_stack").select("title,img").order('id', { ascending: true });
+      if (techRes.error) console.error("Error fetching tech_stack:", techRes.error.message);
 
       // Supabase mengembalikan data dalam properti 'data'
       const projectData = projectsResponse.data || [];
       const certificateData = certificatesResponse.data || [];
+      const techData = (techRes && techRes.data) || [];
 
       setProjects(projectData);
       setCertificates(certificateData);
+      setTechStacks(techData);
 
       // Store in localStorage (fungsionalitas ini tetap dipertahankan)
       localStorage.setItem("projects", JSON.stringify(projectData));
       localStorage.setItem("certificates", JSON.stringify(certificateData));
+      localStorage.setItem("tech_stack", JSON.stringify(techData));
     } catch (error) {
       console.error("Error fetching data from Supabase:", error.message);
     }
@@ -168,10 +182,18 @@ export default function FullWidthTabs() {
     // Coba ambil dari localStorage dulu untuk laod lebih cepat
     const cachedProjects = localStorage.getItem('projects');
     const cachedCertificates = localStorage.getItem('certificates');
+    const cachedTech = localStorage.getItem('tech_stack');
 
     if (cachedProjects && cachedCertificates) {
         setProjects(JSON.parse(cachedProjects));
         setCertificates(JSON.parse(cachedCertificates));
+    }
+    if (cachedTech) {
+      try {
+        setTechStacks(JSON.parse(cachedTech));
+      } catch (e) {
+        console.warn('Invalid cached tech_stack, ignoring');
+      }
     }
     
     fetchData(); // Tetap panggil fetchData untuk sinkronisasi data terbaru
@@ -363,13 +385,14 @@ export default function FullWidthTabs() {
           <TabPanel value={value} index={2} dir={theme.direction}>
             <div className="container mx-auto flex justify-center items-center overflow-hidden pb-[5%]">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-8 gap-5">
-                {techStacks.map((stack, index) => (
+                {(techStacks.length > 0 ? techStacks : DEFAULT_TECH_STACKS).map((stack, index) => (
                   <div
                     key={index}
                     data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
                     data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
                   >
-                    <TechStackIcon TechStackIcon={stack.icon} Language={stack.language} />
+                    {/* normalize keys: support {img,title} from DB or {icon,language} fallback */}
+                    <TechStackIcon TechStackIcon={stack.img || stack.icon} Language={stack.title || stack.language} />
                   </div>
                 ))}
               </div>
