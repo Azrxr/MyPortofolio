@@ -386,7 +386,7 @@ export default function FullWidthTabs() {
             <div className="container mx-auto flex justify-center items-center overflow-hidden pb-[5%]">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-8 gap-5">
                 {(techStacks.length > 0 ? techStacks : DEFAULT_TECH_STACKS).map((stack, index) => (
-                  <div
+                  <div  
                     key={index}
                     data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
                     data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}

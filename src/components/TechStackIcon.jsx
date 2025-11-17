@@ -22,7 +22,11 @@ const TechStackIcon = ({ TechStackIcon, Language }) => {
           </div>
         )}
       </div>
-      <span className="text-slate-300 font-semibold text-sm md:text-base tracking-wide group-hover:text-white transition-colors duration-300">
+      <span
+        className="text-slate-300 font-semibold tracking-wide group-hover:text-white transition-colors duration-300 overflow-hidden"
+        title={Language}
+        style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontSize: 'clamp(0.675rem, 1.6vw, 0.95rem)' }}
+      >
         {Language}
       </span>
     </div>
