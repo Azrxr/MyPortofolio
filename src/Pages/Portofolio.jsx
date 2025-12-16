@@ -72,7 +72,11 @@ export default function Portofolio() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: projectsData } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
+      const { data: projectsData } = await supabase
+        .from("projects")
+        .select("*")
+        .order("Pin", { ascending: false })
+        .order("created_at", { ascending: false });
       if (projectsData) setProjects(projectsData);
 
       const { data: certData } = await supabase.from("certificates").select("*").order("created_at", { ascending: false });
