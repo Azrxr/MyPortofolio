@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 import {
   ArrowLeft, ExternalLink, Github, Code2, Star,
   ChevronRight, Layers, Layout, Globe, Package, Cpu, Code,
@@ -112,41 +114,111 @@ const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    const storedProjects = JSON.parse(localStorage.getItem("projects")) || [];
-    const selectedProject = storedProjects.find((p) => String(p.id) === id);
-    
-    if (selectedProject) {
-      const parseJsonSafe = (val) => {
-        if (!val) return [];
-        if (Array.isArray(val)) return val;
-        if (typeof val === 'string') {
-          try {
-            const parsed = JSON.parse(val);
-            return Array.isArray(parsed) ? parsed : [parsed];
-          } catch (e) {
-            return [val];
-          }
-        }
-        return [val];
-      };
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setNotFound(false);
 
-      const enhancedProject = {
-        ...selectedProject,
-        Features: selectedProject.Features || [],
-        TechStack: selectedProject.TechStack || [],
-        Github: selectedProject.Github || 'https://github.com/azrxr',
-        ProjectType: selectedProject.ProjectType || '',
-        CompanyOrOrganization: selectedProject.CompanyOrOrganization || '',
-        MyRole: parseJsonSafe(selectedProject.MyRole),
-        Responsibilities: parseJsonSafe(selectedProject.Responsibilities),
-      };
-      setProject(enhancedProject);
+        const docRef = doc(db, "projects", id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+
+          // Map Firebase field names to component expected names
+          const enhancedProject = {
+            id: docSnap.id,
+            Img: data.img || data.Img,
+            Title: data.title || data.Title,
+            Description: data.description || data.Description,
+            Link: data.link || data.Link,
+            Github: data.github || data.Github,
+            Features: data.features || data.Features || [],
+            TechStack: data.techStack || data.TechStack || [],
+            Pin: data.isPinned || data.pin || data.Pin,
+            ProjectType: data.projectType || data.ProjectType || '',
+            CompanyOrOrganization: data.companyOrOrganization || data.CompanyOrOrganization || '',
+            MyRole: Array.isArray(data.myRole) ? data.myRole : (data.myRole ? [data.myRole] : []),
+            Responsibilities: Array.isArray(data.responsibilities) ? data.responsibilities : (data.responsibilities ? [data.responsibilities] : []),
+            // Keep original data for backward compatibility
+            ...data,
+          };
+
+          setProject(enhancedProject);
+        } else {
+          setNotFound(true);
+        }
+      } catch (err) {
+        console.error("Error fetching project:", err);
+        setError("Failed to load project data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProject();
     }
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+        <div className="text-center space-y-6 animate-fadeIn">
+          <div className="w-16 h-16 md:w-24 md:h-24 mx-auto border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          <h2 className="text-xl md:text-3xl font-bold text-white">Loading Project...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+        <div className="text-center space-y-6 animate-fadeIn">
+          <div className="w-16 h-16 md:w-24 md:h-24 mx-auto text-red-500">
+            <Code2 className="w-full h-full" />
+          </div>
+          <h2 className="text-xl md:text-3xl font-bold text-white">Error Loading Project</h2>
+          <p className="text-gray-400">{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+        <div className="text-center space-y-6 animate-fadeIn">
+          <div className="w-16 h-16 md:w-24 md:h-24 mx-auto text-yellow-500">
+            <Package className="w-full h-full" />
+          </div>
+          <h2 className="text-xl md:text-3xl font-bold text-white">Project tidak ditemukan</h2>
+          <p className="text-gray-400">The project you're looking for doesn't exist or has been removed.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
@@ -313,12 +385,32 @@ const ProjectDetails = () => {
               <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
               
                 <div className="absolute inset-0 bg-gradient-to-t from-[#030014] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <img
-                  src={project.Img}
-                  alt={project.Title}
-                  className="w-full  object-cover transform transition-transform duration-700 will-change-transform group-hover:scale-105"
-                  onLoad={() => setIsImageLoaded(true)}
-                />
+                
+                {project.Img && !imageError ? (
+                  <img
+                    src={project.Img}
+                    alt={project.Title}
+                    className="w-full object-cover transform transition-transform duration-700 will-change-transform group-hover:scale-105"
+                    onLoad={() => setIsImageLoaded(true)}
+                    onError={() => {
+                      setIsImageLoaded(true);
+                      setImageError(true);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-64 md:h-96 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+                    <div className="text-center space-y-4">
+                      <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                        <Code2 className="w-10 h-10 text-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-semibold text-white">{project.Title}</h3>
+                        <p className="text-gray-400 text-sm">Project Image</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="absolute inset-0 border-2 border-white/0 group-hover:border-white/10 transition-colors duration-300 rounded-2xl" />
               </div>
 

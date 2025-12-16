@@ -3,8 +3,9 @@ import { Modal, IconButton, Box, Fade, Backdrop, Zoom, Typography } from "@mui/m
 import CloseIcon from "@mui/icons-material/Close"
 import FullscreenIcon from "@mui/icons-material/Fullscreen"
 
-const Certificate = ({ ImgSertif }) => {
+const Certificate = ({ ImgSertif, title }) => {
 	const [open, setOpen] = useState(false)
+	const [imgFailed, setImgFailed] = useState(false)
 
 	const handleOpen = () => {
 		setOpen(true)
@@ -12,6 +13,12 @@ const Certificate = ({ ImgSertif }) => {
 
 	const handleClose = () => {
 		setOpen(false)
+	}
+
+	// Generate initials from title
+	const getInitials = (text) => {
+		if (!text) return 'C'
+		return text.split(' ').map(word => word[0]).slice(0, 2).join('').toUpperCase()
 	}
 
 	return (
@@ -25,6 +32,9 @@ const Certificate = ({ ImgSertif }) => {
 					borderRadius: 2,
 					boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
 					transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+					height: "280px", // Fixed total height for consistent card size
+					display: "flex",
+					flexDirection: "column",
 					"&:hover": {
 						transform: "translateY(-5px)",
 						boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
@@ -44,6 +54,11 @@ const Certificate = ({ ImgSertif }) => {
 				<Box
 					sx={{
 						position: "relative",
+						flex: 1, // Take remaining space
+						minHeight: "200px", // Minimum height for image
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
 						"&::before": {
 							content: '""',
 							position: "absolute",
@@ -55,21 +70,65 @@ const Certificate = ({ ImgSertif }) => {
 							zIndex: 1,
 						},
 					}}>
-					<img
-						className="certificate-image"
-						src={ImgSertif}
-						alt="Certificate"
-						style={{
-							width: "100%",
-							height: "auto",
-							display: "block",
-							objectFit: "cover",
-							filter: "contrast(1.10) brightness(0.9) saturate(1.1)",
-							transition: "filter 0.3s ease",
-						}}
-						onClick={handleOpen}
-					/>
+					{!imgFailed && ImgSertif ? (
+						<img
+							className="certificate-image"
+							src={ImgSertif}
+							alt={title || "Certificate"}
+							style={{
+								width: "100%",
+								height: "100%",
+								display: "block",
+								objectFit: "cover",
+								filter: "contrast(1.10) brightness(0.9) saturate(1.1)",
+								transition: "filter 0.3s ease",
+							}}
+							onClick={handleOpen}
+							onError={() => setImgFailed(true)}
+						/>
+					) : (
+						<div
+							className="certificate-image flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800 text-white font-bold text-2xl cursor-pointer"
+							style={{
+								width: "100%",
+								height: "100%",
+								transition: "filter 0.3s ease",
+							}}
+							onClick={handleOpen}
+						>
+							{getInitials(title)}
+						</div>
+					)}
 				</Box>
+
+				{/* Certificate Title */}
+				{title && (
+					<Box
+						sx={{
+							padding: "12px 16px 16px 16px",
+							backgroundColor: "rgba(0, 0, 0, 0.7)",
+							backdropFilter: "blur(10px)",
+						}}
+					>
+						<Typography
+							variant="body2"
+							sx={{
+								color: "white",
+								fontWeight: 600,
+								fontSize: "0.875rem",
+								lineHeight: 1.2,
+								textAlign: "center",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+								maxWidth: "100%",
+							}}
+							title={title}
+						>
+							{title}
+						</Typography>
+					</Box>
+				)}
 
 				{/* Hover Overlay */}
 				<Box

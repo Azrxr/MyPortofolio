@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 
-import { supabase } from "../supabase";
+import { getProjects, getCertificates, getTechStacks } from "../services/projectService";
 
 import PropTypes from "prop-types";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -64,6 +64,8 @@ export default function Portofolio() {
 
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllCertificates, setShowAllCertificates] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const initialItems = 6;
 
   useEffect(() => {
@@ -71,26 +73,27 @@ export default function Portofolio() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const { data: projectsData } = await supabase
-        .from("projects")
-        .select("*")
-        .order("Pin", { ascending: false })
-        .order("created_at", { ascending: false });
+      const projectsData = await getProjects();
       if (projectsData) setProjects(projectsData);
 
-      const { data: certData } = await supabase.from("certificates").select("*").order("created_at", { ascending: false });
+      const certData = await getCertificates();
       if (certData) setCertificates(certData);
 
       const cached = localStorage.getItem("tech_stack_cache");
       if (cached) setTechStacks(JSON.parse(cached));
-      const { data: techData } = await supabase.from("tech_stack").select("title,img");
+      const techData = await getTechStacks();
       if (techData) {
         setTechStacks(techData);
         localStorage.setItem("tech_stack_cache", JSON.stringify(techData));
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching data:", err);
+      setError("Gagal mengambil data. Silakan periksa koneksi internet Anda dan coba lagi.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -136,6 +139,37 @@ export default function Portofolio() {
           represents a milestone in my continuous learning path.
         </p>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center" data-aos="fade-in">
+          <div className="flex items-center justify-center gap-2 text-red-400 mb-2">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="font-medium">Error</span>
+          </div>
+          <p className="text-red-300 text-sm">{error}</p>
+          <button
+            onClick={fetchData}
+            className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center" data-aos="fade-in">
+          <div className="flex items-center justify-center gap-2 text-blue-400 mb-2">
+            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="font-medium">Memuat Data</span>
+          </div>
+          <p className="text-blue-300 text-sm">Sedang mengambil data portfolio...</p>
+        </div>
+      )}
 
       <Box sx={{ width: "100%" }}>
         <AppBar
@@ -214,17 +248,29 @@ export default function Portofolio() {
           <SwiperSlide>
             <TabPanel value={value} index={0} dir={theme.direction}>
               <div className="container mx-auto flex justify-center items-center overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
-                  {displayedProjects.map((project, index) => (
-                    <div
-                      key={project.id || index}
-                      data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                      data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                    >
-                      <CardProject Img={project.Img} Title={project.Title} Description={project.Description} Link={project.Link} id={project.id} />
+                {projects.length === 0 && !loading ? (
+                  <div className="text-center py-12" data-aos="fade-in">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-xl font-semibold text-gray-300 mb-2">Tidak Ada Proyek</h3>
+                    <p className="text-gray-500">Data proyek belum tersedia atau gagal dimuat.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
+                    {displayedProjects.map((project, index) => (
+                      <div
+                        key={project.id || index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <CardProject Img={project.Img} Title={project.Title} Description={project.Description} Link={project.Link} id={project.id} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {projects.length > initialItems && (
@@ -238,17 +284,29 @@ export default function Portofolio() {
           <SwiperSlide>
             <TabPanel value={value} index={1} dir={theme.direction}>
               <div className="container mx-auto flex justify-center items-center overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4">
-                  {displayedCertificates.map((certificate, index) => (
-                    <div
-                      key={certificate.id || index}
-                      data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                      data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                    >
-                      <Certificate ImgSertif={certificate.Img} />
+                {certificates.length === 0 && !loading ? (
+                  <div className="text-center py-12" data-aos="fade-in">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-xl font-semibold text-gray-300 mb-2">Tidak Ada Sertifikat</h3>
+                    <p className="text-gray-500">Data sertifikat belum tersedia atau gagal dimuat.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4">
+                    {displayedCertificates.map((certificate, index) => (
+                      <div
+                        key={certificate.id || index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <Certificate ImgSertif={certificate.Img} title={certificate.title || certificate.tittle} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {certificates.length > initialItems && (
@@ -262,17 +320,30 @@ export default function Portofolio() {
           <SwiperSlide>
             <TabPanel value={value} index={2} dir={theme.direction}>
               <div className="container mx-auto flex justify-center items-center overflow-hidden pb-[5%]">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-8 gap-5">
-                  {(techStacks.length > 0 ? techStacks : []).map((stack, index) => (
-                    <div
-                      key={index}
-                      data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                      data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                    >
-                      <TechStackIcon TechStackIcon={stack.img || stack.icon} Language={stack.title || stack.language} />
+                {techStacks.length === 0 && !loading ? (
+                  <div className="text-center py-12" data-aos="fade-in">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-xl font-semibold text-gray-300 mb-2">Tidak Ada Tech Stack</h3>
+                    <p className="text-gray-500">Data tech stack belum tersedia atau gagal dimuat.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-8 gap-5">
+                    {(techStacks.length > 0 ? techStacks : []).map((stack, index) => (
+                      <div
+                        key={index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <TechStackIcon TechStackIcon={stack.img || stack.icon} Language={stack.title || stack.language} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabPanel>
           </SwiperSlide>

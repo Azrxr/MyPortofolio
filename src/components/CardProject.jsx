@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, ArrowRight } from 'lucide-react';
+import { ExternalLink, ArrowRight, Code2 } from 'lucide-react';
 
 const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   // Handle kasus ketika ProjectLink kosong
   const handleLiveDemo = (e) => {
@@ -37,17 +38,29 @@ const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
               <div className="absolute inset-0 bg-gray-700/60 animate-pulse" aria-hidden="true" />
             )}
 
-            {Img ? (
+            {Img && !imgError ? (
               <img
                 src={Img}
                 alt={Title}
                 loading="lazy"
                 onLoad={() => setImgLoaded(true)}
-                onError={() => setImgLoaded(true)}
+                onError={() => {
+                  setImgLoaded(true);
+                  setImgError(true);
+                }}
                 className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-700 text-white">No image</div>
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800 text-white">
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <Code2 className="w-6 h-6" />
+                  </div>
+                  <div className="text-xs font-medium opacity-80">
+                    {Title?.slice(0, 15)}{Title?.length > 15 ? '...' : ''}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
           

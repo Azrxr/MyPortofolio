@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { collection, getDocs, addDoc, query, orderBy, where, onSnapshot } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase/firebase';
 import { MessageCircle, UserCircle2, Loader2, AlertCircle, Send, ImagePlus, X, Pin } from 'lucide-react';
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { supabase } from '../supabase';
 
 
 const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
@@ -21,10 +22,10 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
             </div>
         )}
         <div className="flex items-start gap-3">
-            {comment.profile_image ? (
+            {comment.profileImage ? (
                 <img
-                    src={comment.profile_image}
-                    alt={`${comment.user_name}'s profile`}
+                    src={comment.profileImage}
+                    alt={`${comment.userName}'s profile`}
                     className={`w-10 h-10 rounded-full object-cover border-2 flex-shrink-0  ${
                         isPinned ? 'border-indigo-500/50' : 'border-indigo-500/30'
                     }`}
@@ -43,7 +44,7 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
                         <h4 className={`font-medium truncate ${
                             isPinned ? 'text-indigo-200' : 'text-white'
                         }`}>
-                            {comment.user_name}
+                            {comment.userName}
                         </h4>
                         {isPinned && (
                             <span className="px-2 py-0.5 text-xs bg-indigo-500/20 text-indigo-300 rounded-full">
@@ -52,7 +53,7 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
                         )}
                     </div>
                     <span className="text-xs text-gray-400 whitespace-nowrap">
-                        {formatDate(comment.created_at)}
+                        {formatDate(comment.createdAt)}
                     </span>
                 </div>
                 <p className="text-gray-300 text-sm break-words leading-relaxed relative bottom-2">
@@ -243,19 +244,17 @@ const Komentar = () => {
     useEffect(() => {
         const fetchPinnedComment = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('portfolio_comments')
-                    .select('*')
-                    .eq('is_pinned', true)
-                    .single();
+                const q = query(
+                    collection(db, 'portfolio_comments'),
+                    where('isPinned', '==', true)
+                );
+                const snapshot = await getDocs(q);
                 
-                if (error && error.code !== 'PGRST116') {
-                    console.error('Error fetching pinned comment:', error);
-                    return;
-                }
-                
-                if (data) {
-                    setPinnedComment(data);
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    setPinnedComment({ id: doc.id, ...doc.data() });
+                } else {
+                    setPinnedComment(null);
                 }
             } catch (error) {
                 console.error('Error fetching pinned comment:', error);
@@ -267,42 +266,23 @@ const Komentar = () => {
 
     // Fetch regular comments (excluding pinned) and set up real-time subscription
     useEffect(() => {
-        const fetchComments = async () => {
-            const { data, error } = await supabase
-                .from('portfolio_comments')
-                .select('*')
-                .eq('is_pinned', false)
-                .order('created_at', { ascending: false });
-            
-            if (error) {
-                console.error('Error fetching comments:', error);
-                return;
-            }
-            
-            setComments(data || []);
-        };
+        const q = query(
+            collection(db, 'portfolio_comments'),
+            where('isPinned', '==', false),
+            orderBy('createdAt', 'desc')
+        );
 
-        fetchComments();
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const commentsData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setComments(commentsData);
+        }, (error) => {
+            console.error('Error fetching comments:', error);
+        });
 
-        // Set up real-time subscription
-        const subscription = supabase
-            .channel('portfolio_comments')
-            .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'portfolio_comments',
-                    filter: 'is_pinned=eq.false'
-                }, 
-                () => {
-                    fetchComments(); // Refresh comments when changes occur
-                }
-            )
-            .subscribe();
-
-        return () => {
-            subscription.unsubscribe();
-        };
+        return () => unsubscribe();
     }, []);
 
     const uploadImage = useCallback(async (imageFile) => {
@@ -310,21 +290,16 @@ const Komentar = () => {
         
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `profile-images/${fileName}`;
+        const storageRef = ref(storage, `profile-images/${fileName}`);
 
-        const { error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(filePath, imageFile);
-
-        if (uploadError) {
-            throw uploadError;
+        try {
+            const snapshot = await uploadBytes(storageRef, imageFile);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
         }
-
-        const { data } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(filePath);
-
-        return data.publicUrl;
     }, []);
 
     const handleCommentSubmit = useCallback(async ({ newComment, userName, imageFile }) => {
@@ -334,21 +309,13 @@ const Komentar = () => {
         try {
             const profileImageUrl = await uploadImage(imageFile);
             
-            const { error } = await supabase
-                .from('portfolio_comments')
-                .insert([
-                    {
-                        content: newComment,
-                        user_name: userName,
-                        profile_image: profileImageUrl,
-                        is_pinned: false,
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (error) {
-                throw error;
-            }
+            await addDoc(collection(db, 'portfolio_comments'), {
+                content: newComment,
+                userName: userName,
+                profileImage: profileImageUrl,
+                isPinned: false,
+                createdAt: new Date()
+            });
         } catch (error) {
             setError('Failed to post comment. Please try again.');
             console.error('Error adding comment: ', error);
@@ -357,24 +324,48 @@ const Komentar = () => {
         }
     }, [uploadImage]);
 
+    
     const formatDate = useCallback((timestamp) => {
         if (!timestamp) return '';
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diffMinutes = Math.floor((now - date) / (1000 * 60));
-        const diffHours = Math.floor(diffMinutes / 60);
-        const diffDays = Math.floor(diffHours / 24);
+        
+        let date;
+        try {
+            // Handle Firebase Firestore Timestamp objects
+            if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+                date = timestamp.toDate();
+            } else if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
+                // Handle Firestore Timestamp in object form
+                date = new Date(timestamp.seconds * 1000);
+            } else {
+                // Handle regular date strings or numbers
+                date = new Date(timestamp);
+            }
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date:', timestamp);
+                return '';
+            }
+            
+            const now = new Date();
+            const diffMinutes = Math.floor((now - date) / (1000 * 60));
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMinutes < 1) return 'Just now';
-        if (diffMinutes < 60) return `${diffMinutes}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
+            if (diffMinutes < 1) return 'Just now';
+            if (diffMinutes < 60) return `${diffMinutes}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
 
-        return new Intl.DateTimeFormat('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        }).format(date);
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }).format(date);
+        } catch (error) {
+            console.error('Error formatting date:', error, timestamp);
+            return '';
+        }
     }, []);
 
     // Calculate total comments (pinned + regular)
