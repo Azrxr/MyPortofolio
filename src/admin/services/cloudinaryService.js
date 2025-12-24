@@ -7,13 +7,13 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 /**
- * Upload image to Cloudinary using UNSIGNED upload
+ * Upload file to Cloudinary using UNSIGNED upload
  * No backend/API secret required - uses upload preset
  *
- * @param {File} file - The image file to upload
+ * @param {File} file - The file to upload (image or PDF)
  * @param {string} folder - The Cloudinary folder path
  * @param {Function} onProgress - Optional progress callback
- * @returns {Promise<string>} - The secure URL of the uploaded image
+ * @returns {Promise<string>} - The secure URL of the uploaded file
  */
 export async function uploadToCloudinary(file, folder, onProgress = null) {
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
@@ -22,14 +22,24 @@ export async function uploadToCloudinary(file, folder, onProgress = null) {
     );
   }
 
+  // Determine resource type based on file type
+  // Use 'auto' to let Cloudinary detect, or 'raw' for PDFs specifically
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  const resourceType = isPdf ? "auto" : "image";
+
   // Prepare form data for unsigned upload
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
   formData.append("folder", folder);
+  
+  // For PDFs, specify resource_type in form data as well
+  if (isPdf) {
+    formData.append("resource_type", "auto");
+  }
 
   // Upload URL for unsigned uploads
-  const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
 
   // Use XMLHttpRequest for progress tracking
   return new Promise((resolve, reject) => {
@@ -46,7 +56,14 @@ export async function uploadToCloudinary(file, folder, onProgress = null) {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText);
-          resolve(response.secure_url);
+          let url = response.secure_url;
+          
+          // For PDFs, ensure we use /image/upload/ path
+          if (isPdf && url.includes('/raw/upload/')) {
+            url = url.replace('/raw/upload/', '/image/upload/');
+          }
+          
+          resolve(url);
         } catch {
           reject(new Error("Invalid response from Cloudinary"));
         }

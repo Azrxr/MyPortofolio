@@ -458,7 +458,7 @@ const Komentar = () => {
                     )}
                 </div>
             </div>
-            <style jsx>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -473,7 +473,7 @@ const Komentar = () => {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(99, 102, 241, 0.7);
                 }
-            `}</style>
+            `}} />
         </div>
     );
 };

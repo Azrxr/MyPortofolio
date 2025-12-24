@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from "react"
 import { Github, Linkedin, Mail, ExternalLink, Instagram, Sparkles } from "lucide-react"
-import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import Lottie from 'lottie-react'
+import codingAnimation from '../../public/Coding.json'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 
@@ -144,20 +145,20 @@ const Home = () => {
     return () => clearTimeout(timeout);
   }, [handleTyping]);
 
-  // Lottie configuration
+  // Lottie configuration - responsive scaling
   const lottieOptions = {
-    src: "https://lottie.host/58753882-bb6a-49f5-a2c0-950eda1e135a/NLbpVqGegK.lottie",
+    animationData: codingAnimation,
     loop: true,
     autoplay: true,
-    rendererSettings: {
-      preserveAspectRatio: 'xMidYMid slice',
-      progressiveLoad: true,
+    style: { 
+      width: "100%", 
+      height: "auto",
+      maxWidth: "100%",
     },
-    style: { width: "100%", height: "100%" },
-    className: `w-full h-full transition-all duration-500 ${
+    className: `w-full h-auto transition-all duration-500 ${
       isHovering 
-        ? "scale-[180%] sm:scale-[160%] md:scale-[150%] lg:scale-[145%] rotate-2" 
-        : "scale-[175%] sm:scale-[155%] md:scale-[145%] lg:scale-[140%]"
+        ? "scale-105 rotate-1" 
+        : "scale-100"
     }`
   };
 
@@ -226,7 +227,7 @@ const Home = () => {
                 <div className={`relative lg:left-12 z-10 w-full opacity-90 transform transition-transform duration-500 ${
                   isHovering ? "scale-105" : "scale-100"
                 }`}>
-                  <DotLottieReact {...lottieOptions} />
+                  <Lottie {...lottieOptions} />
                 </div>
 
                 <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${

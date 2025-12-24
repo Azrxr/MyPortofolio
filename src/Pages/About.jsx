@@ -1,7 +1,8 @@
 import React, { useEffect, useState, memo, useMemo } from "react"
-import { FileText, Code, Award, Globe, ArrowUpRight, Sparkles, UserCheck } from "lucide-react"
+import { FileText, Code, Award, Globe, ArrowUpRight, Sparkles, UserCheck, X } from "lucide-react"
 import AOS from 'aos'
 import 'aos/dist/aos.css'
+import { getPortfolioSettings, calculateYearsOfExperience } from "../services/settingsService"
 
 // Memoized Components
 const Header = memo(() => (
@@ -113,16 +114,41 @@ const StatCard = memo(({ icon: Icon, color, value, label, description, animation
 ));
 
 const AboutPage = () => {
-  // State for stats
+  // State for stats and settings
   const [totalProjects, setTotalProjects] = useState(0);
   const [totalCertificates, setTotalCertificates] = useState(0);
+  const [settings, setSettings] = useState({
+    name: "Moh Asrori",
+    bio: "",
+    experienceStartDate: "2021-11-06",
+    cvUrlId: "",
+    cvUrlEn: "",
+    profileImage: "/Photo.jpg",
+  });
+  const [cvLang, setCvLang] = useState("id"); // 'id' or 'en'
+  const [showCvPreview, setShowCvPreview] = useState(false);
 
-  // Calculate years of experience
+  // Calculate years of experience from settings
   const YearExperience = useMemo(() => {
-    const startDate = new Date("2021-11-06");
-    const today = new Date();
-    return today.getFullYear() - startDate.getFullYear() -
-      (today < new Date(today.getFullYear(), startDate.getMonth(), startDate.getDate()) ? 1 : 0);
+    return calculateYearsOfExperience(settings.experienceStartDate);
+  }, [settings.experienceStartDate]);
+
+  // Get current CV URL based on selected language
+  const currentCvUrl = useMemo(() => {
+    return cvLang === "id" ? settings.cvUrlId : settings.cvUrlEn;
+  }, [cvLang, settings.cvUrlId, settings.cvUrlEn]);
+
+  // Load settings from Firebase
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const data = await getPortfolioSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    }
+    loadSettings();
   }, []);
 
   // Load stats from localStorage on mount and listen for changes
@@ -228,7 +254,7 @@ const AboutPage = () => {
                 data-aos="fade-right"
                 data-aos-duration="1300"
               >
-                Moh Asrori
+                {settings.name || "Moh Asrori"}
               </span>
             </h2>
             
@@ -237,12 +263,8 @@ const AboutPage = () => {
               data-aos="fade-right"
               data-aos-duration="1500"
             >
-             Saya adalah seorang Mobile & Backend Developer dengan pengalaman dalam membangun aplikasi Android menggunakan Kotlin serta mengembangkan backend menggunakan Laravel dan RESTful API. 
-             Berpengalaman dalam pengembangan aplikasi end-to-end melalui magang, proyek akademik, dan capstone Bangkit Academy.
-
-            <br /> Saya menikmati proses mengubah kebutuhan menjadi solusi digital yang fungsional, scalable, dan mudah digunakan, serta memiliki ketertarikan kuat dalam meningkatkan kualitas aplikasi melalui clean code, API integration, dan arsitektur yang efisien.
-
-            <br /> Saya siap berkontribusi dalam lingkungan profesional, belajar teknologi baru, dan mengerjakan proyek yang memberikan dampak nyata.
+             {settings.bio || `Saya adalah seorang Mobile & Backend Developer dengan pengalaman dalam membangun aplikasi Android menggunakan Kotlin serta mengembangkan backend menggunakan Laravel dan RESTful API. 
+             Berpengalaman dalam pengembangan aplikasi end-to-end melalui magang, proyek akademik, dan capstone Bangkit Academy.`}
             </p>
 
                {/* Quote Section */}
@@ -267,25 +289,64 @@ const AboutPage = () => {
         </blockquote>
       </div>
 
-            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-4 lg:px-0 w-full">
-              <a href="https://drive.google.com/drive/folders/1Yiwd20AvcWUpzbOcoKioBZpqvB9uP6Q4?usp=sharing" className="w-full lg:w-auto">
-              <button 
-                data-aos="fade-up"
-                data-aos-duration="800"
-                className="w-full lg:w-auto sm:px-6 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center lg:justify-start gap-2 shadow-lg hover:shadow-xl "
-              >
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5" /> Download CV
-              </button>
-              </a>
-              <a href="#Portofolio" className="w-full lg:w-auto">
-              <button 
-                data-aos="fade-up"
-                data-aos-duration="1000"
-                className="w-full lg:w-auto sm:px-6 py-2 sm:py-3 rounded-lg border border-[#a855f7]/50 text-[#a855f7] font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center lg:justify-start gap-2 hover:bg-[#a855f7]/10 "
-              >
-                <Code className="w-4 h-4 sm:w-5 sm:h-5" /> View Projects
-              </button>
-              </a>
+            {/* CV Language Toggle and Buttons */}
+            <div className="space-y-4 w-full" data-aos="fade-up" data-aos-duration="800">
+              {/* Language Toggle */}
+              <div className="flex items-center justify-center lg:justify-start gap-2">
+                <span className="text-sm text-gray-400">CV Language:</span>
+                <div className="flex bg-white/10 rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setCvLang("id")}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                      cvLang === "id"
+                        ? "bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <img src="/flag_id.png" alt="ID" className="w-5 h-4 object-cover rounded-sm" /> ID
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCvLang("en")}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                      cvLang === "en"
+                        ? "bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <img src="/flag_en.png" alt="EN" className="w-5 h-4 object-cover rounded-sm" /> EN
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-4 lg:px-0 w-full">
+                {currentCvUrl ? (
+                  <button 
+                    onClick={() => setShowCvPreview(true)}
+                    className="w-full lg:w-auto sm:px-6 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center lg:justify-start gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" /> 
+                    {cvLang === "id" ? "Lihat CV" : "View CV"}
+                  </button>
+                ) : (
+                  <a href="https://drive.google.com/drive/folders/1Yiwd20AvcWUpzbOcoKioBZpqvB9uP6Q4?usp=sharing" target="_blank" rel="noopener noreferrer" className="w-full lg:w-auto">
+                    <button 
+                      className="w-full lg:w-auto sm:px-6 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center lg:justify-start gap-2 shadow-lg hover:shadow-xl"
+                    >
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5" /> Download CV
+                    </button>
+                  </a>
+                )}
+                <a href="#Portofolio" className="w-full lg:w-auto">
+                  <button 
+                    className="w-full lg:w-auto sm:px-6 py-2 sm:py-3 rounded-lg border border-[#a855f7]/50 text-[#a855f7] font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center lg:justify-start gap-2 hover:bg-[#a855f7]/10"
+                  >
+                    <Code className="w-4 h-4 sm:w-5 sm:h-5" /> View Projects
+                  </button>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -300,6 +361,43 @@ const AboutPage = () => {
           </div>
         </a>
       </div>
+
+      {/* CV Preview Modal */}
+      {showCvPreview && currentCvUrl && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e1e2e] rounded-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden border border-purple-500/30">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h3 className="text-white font-medium flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-400" />
+                CV Preview ({cvLang === "id" ? "Bahasa Indonesia" : "English"})
+              </h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={currentCvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white rounded-lg hover:opacity-90 transition-opacity text-sm"
+                >
+                  Download
+                </a>
+                <button
+                  onClick={() => setShowCvPreview(false)}
+                  className="text-gray-400 hover:text-white transition-colors p-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={`${currentCvUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                className="w-full h-full"
+                title="CV Preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes float {

@@ -80,6 +80,14 @@ export default function AdminLayout({ children, title }) {
                     Comments
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/admin/settings"
+                    className="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    ⚙️ Settings
+                  </Link>
+                </li>
               </ul>
             </div>
           </nav>

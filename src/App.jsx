@@ -19,6 +19,7 @@ import ProjectsAdmin from "./admin/pages/ProjectsAdmin";
 import TechStackAdmin from "./admin/pages/TechStackAdmin";
 import CertificatesAdmin from "./admin/pages/CertificatesAdmin";
 import CommentsAdmin from "./admin/pages/CommentsAdmin";
+import SettingsAdmin from "./admin/pages/SettingsAdmin";
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
   return (
@@ -77,7 +78,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/" element={<LandingPage showWelcome={showWelcome} setShowWelcome={setShowWelcome} />} />
         <Route path="/project/:id" element={<ProjectPageLayout />} />
@@ -120,6 +121,14 @@ function App() {
           element={
             <AdminRoute>
               <CommentsAdmin />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminRoute>
+              <SettingsAdmin />
             </AdminRoute>
           }
         />
