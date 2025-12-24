@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { collection, getDocs, addDoc, query, orderBy, where, onSnapshot } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase/firebase';
+import { db } from '../firebase/firebase';
 import { MessageCircle, UserCircle2, Loader2, AlertCircle, Send, ImagePlus, X, Pin } from 'lucide-react';
 import AOS from "aos";
 import "aos/dist/aos.css";
+
+// Cloudinary configuration for public upload
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 
 const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
@@ -264,19 +267,20 @@ const Komentar = () => {
         fetchPinnedComment();
     }, []);
 
-    // Fetch regular comments (excluding pinned) and set up real-time subscription
+    // Fetch regular comments (excluding pinned and hidden) and set up real-time subscription
     useEffect(() => {
         const q = query(
             collection(db, 'portfolio_comments'),
-            where('isPinned', '==', false),
             orderBy('createdAt', 'desc')
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const commentsData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const commentsData = snapshot.docs
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }))
+                .filter(comment => !comment.isPinned && !comment.isHidden); // Filter out pinned and hidden
             setComments(commentsData);
         }, (error) => {
             console.error('Error fetching comments:', error);
@@ -285,20 +289,37 @@ const Komentar = () => {
         return () => unsubscribe();
     }, []);
 
-    const uploadImage = useCallback(async (imageFile) => {
+    const uploadImageToCloudinary = useCallback(async (imageFile) => {
         if (!imageFile) return null;
         
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const storageRef = ref(storage, `profile-images/${fileName}`);
+        if (!CLOUD_NAME || !UPLOAD_PRESET) {
+            console.error('Cloudinary configuration missing');
+            return null;
+        }
+
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('folder', 'portfolio/comments');
 
         try {
-            const snapshot = await uploadBytes(storageRef, imageFile);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            return downloadURL;
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+                {
+                    method: 'POST',
+                    body: formData,
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const data = await response.json();
+            return data.secure_url;
         } catch (error) {
-            console.error('Error uploading image:', error);
-            throw error;
+            console.error('Error uploading image to Cloudinary:', error);
+            return null; // Return null instead of throwing - photo is optional
         }
     }, []);
 

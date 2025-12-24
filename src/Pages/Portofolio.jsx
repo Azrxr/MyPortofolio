@@ -77,10 +77,18 @@ export default function Portofolio() {
     setError(null);
     try {
       const projectsData = await getProjects();
-      if (projectsData) setProjects(projectsData);
+      if (projectsData) {
+        setProjects(projectsData);
+        // Save to localStorage for About page stats
+        localStorage.setItem("projects", JSON.stringify(projectsData));
+      }
 
       const certData = await getCertificates();
-      if (certData) setCertificates(certData);
+      if (certData) {
+        setCertificates(certData);
+        // Save to localStorage for About page stats
+        localStorage.setItem("certificates", JSON.stringify(certData));
+      }
 
       const cached = localStorage.getItem("tech_stack_cache");
       if (cached) setTechStacks(JSON.parse(cached));

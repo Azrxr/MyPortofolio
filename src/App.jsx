@@ -12,6 +12,12 @@ import WelcomeScreen from "./Pages/WelcomeScreen";
 import { AnimatePresence } from 'framer-motion';
 import notfound from "./Pages/404";
 import NotFoundPage from "./Pages/404";
+import AdminLogin from "./admin/pages/Login";
+import AdminRoute from "./admin/routes/AdminRoute";
+import AdminDashboard from "./admin/pages/Dashboard";
+import ProjectsAdmin from "./admin/pages/ProjectsAdmin";
+import TechStackAdmin from "./admin/pages/TechStackAdmin";
+import CertificatesAdmin from "./admin/pages/CertificatesAdmin";
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
   return (
@@ -74,6 +80,40 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage showWelcome={showWelcome} setShowWelcome={setShowWelcome} />} />
         <Route path="/project/:id" element={<ProjectPageLayout />} />
+        {/* Admin routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/projects"
+          element={
+            <AdminRoute>
+              <ProjectsAdmin />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/tech-stack"
+          element={
+            <AdminRoute>
+              <TechStackAdmin />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/certificates"
+          element={
+            <AdminRoute>
+              <CertificatesAdmin />
+            </AdminRoute>
+          }
+        />
          <Route path="*" element={<NotFoundPage />} /> {/* Ini route 404 */}
       </Routes>
     </BrowserRouter>

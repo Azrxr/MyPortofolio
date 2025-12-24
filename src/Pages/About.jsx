@@ -1,4 +1,4 @@
-import React, { useEffect, memo, useMemo } from "react"
+import React, { useEffect, useState, memo, useMemo } from "react"
 import { FileText, Code, Award, Globe, ArrowUpRight, Sparkles, UserCheck } from "lucide-react"
 import AOS from 'aos'
 import 'aos/dist/aos.css'
@@ -113,20 +113,43 @@ const StatCard = memo(({ icon: Icon, color, value, label, description, animation
 ));
 
 const AboutPage = () => {
-  // Memoized calculations
-  const { totalProjects, totalCertificates, YearExperience } = useMemo(() => {
-    const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
-    const storedCertificates = JSON.parse(localStorage.getItem("certificates") || "[]");
-    
+  // State for stats
+  const [totalProjects, setTotalProjects] = useState(0);
+  const [totalCertificates, setTotalCertificates] = useState(0);
+
+  // Calculate years of experience
+  const YearExperience = useMemo(() => {
     const startDate = new Date("2021-11-06");
     const today = new Date();
-    const experience = today.getFullYear() - startDate.getFullYear() -
+    return today.getFullYear() - startDate.getFullYear() -
       (today < new Date(today.getFullYear(), startDate.getMonth(), startDate.getDate()) ? 1 : 0);
+  }, []);
 
-    return {
-      totalProjects: storedProjects.length,
-      totalCertificates: storedCertificates.length,
-      YearExperience: experience
+  // Load stats from localStorage on mount and listen for changes
+  useEffect(() => {
+    const loadStats = () => {
+      const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
+      const storedCertificates = JSON.parse(localStorage.getItem("certificates") || "[]");
+      setTotalProjects(storedProjects.length);
+      setTotalCertificates(storedCertificates.length);
+    };
+
+    loadStats();
+
+    // Listen for storage changes (when Portfolio page updates localStorage)
+    const handleStorageChange = (e) => {
+      if (e.key === "projects" || e.key === "certificates") {
+        loadStats();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check periodically in case same-tab updates
+    const interval = setInterval(loadStats, 2000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
     };
   }, []);
 
