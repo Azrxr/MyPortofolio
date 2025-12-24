@@ -18,6 +18,7 @@ import AdminDashboard from "./admin/pages/Dashboard";
 import ProjectsAdmin from "./admin/pages/ProjectsAdmin";
 import TechStackAdmin from "./admin/pages/TechStackAdmin";
 import CertificatesAdmin from "./admin/pages/CertificatesAdmin";
+import CommentsAdmin from "./admin/pages/CommentsAdmin";
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
   return (
@@ -111,6 +112,14 @@ function App() {
           element={
             <AdminRoute>
               <CertificatesAdmin />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/comments"
+          element={
+            <AdminRoute>
+              <CommentsAdmin />
             </AdminRoute>
           }
         />

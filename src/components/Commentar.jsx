@@ -292,34 +292,42 @@ const Komentar = () => {
     const uploadImageToCloudinary = useCallback(async (imageFile) => {
         if (!imageFile) return null;
         
-        if (!CLOUD_NAME || !UPLOAD_PRESET) {
-            console.error('Cloudinary configuration missing');
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+        
+        if (!cloudName || !uploadPreset) {
+            console.warn('Cloudinary configuration missing. Skipping image upload.');
+            console.warn('CLOUD_NAME:', cloudName, 'UPLOAD_PRESET:', uploadPreset);
             return null;
         }
 
         const formData = new FormData();
         formData.append('file', imageFile);
-        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('upload_preset', uploadPreset);
         formData.append('folder', 'portfolio/comments');
 
         try {
-            const response = await fetch(
-                `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-                {
-                    method: 'POST',
-                    body: formData,
-                }
-            );
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+            console.log('Uploading to:', uploadUrl);
+            
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData,
+            });
 
             if (!response.ok) {
+                const errorData = await response.text();
+                console.error('Cloudinary error response:', errorData);
                 throw new Error('Upload failed');
             }
 
             const data = await response.json();
+            console.log('Upload successful:', data.secure_url);
             return data.secure_url;
         } catch (error) {
             console.error('Error uploading image to Cloudinary:', error);
-            return null; // Return null instead of throwing - photo is optional
+            // Return null - photo is optional, comment will still be posted
+            return null;
         }
     }, []);
 
@@ -328,13 +336,15 @@ const Komentar = () => {
         setIsSubmitting(true);
         
         try {
-            const profileImageUrl = await uploadImage(imageFile);
+            // Upload image to Cloudinary (optional - won't fail if upload fails)
+            const profileImageUrl = await uploadImageToCloudinary(imageFile);
             
             await addDoc(collection(db, 'portfolio_comments'), {
                 content: newComment,
                 userName: userName,
                 profileImage: profileImageUrl,
                 isPinned: false,
+                isHidden: false,
                 createdAt: new Date()
             });
         } catch (error) {
@@ -343,7 +353,7 @@ const Komentar = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [uploadImage]);
+    }, [uploadImageToCloudinary]);
 
     
     const formatDate = useCallback((timestamp) => {

@@ -4,27 +4,31 @@ import AdminLayout from "../components/AdminLayout";
 import { getProjectsCount } from "../services/projectService";
 import { getCertificatesCount } from "../services/certificateService";
 import { getTechStackCount } from "../services/techStackService";
+import { getCommentsCount } from "../services/commentService";
 
 export default function Dashboard() {
   const [counts, setCounts] = useState({
     projects: 0,
     certificates: 0,
     techStack: 0,
+    comments: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const [projectsCount, certificatesCount, techStackCount] = await Promise.all([
+        const [projectsCount, certificatesCount, techStackCount, commentsCount] = await Promise.all([
           getProjectsCount(),
           getCertificatesCount(),
           getTechStackCount(),
+          getCommentsCount(),
         ]);
         setCounts({
           projects: projectsCount,
           certificates: certificatesCount,
           techStack: techStackCount,
+          comments: commentsCount,
         });
       } catch (error) {
         console.error("Error fetching counts:", error);
@@ -63,12 +67,21 @@ export default function Dashboard() {
       textColor: "text-purple-300",
       icon: "🏆",
     },
+    {
+      title: "Comments",
+      count: counts.comments,
+      link: "/admin/comments",
+      gradient: "from-orange-600/20 to-red-600/20",
+      border: "border-orange-500/30 hover:border-orange-500/50",
+      textColor: "text-orange-300",
+      icon: "💬",
+    },
   ];
 
   return (
     <AdminLayout title="Dashboard Overview">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((card) => (
           <Link
             key={card.title}
@@ -96,7 +109,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-xl">
         <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/admin/projects"
             className="flex items-center gap-3 p-4 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg transition-colors"
@@ -117,6 +130,13 @@ export default function Dashboard() {
           >
             <span className="text-2xl">💻</span>
             <span className="text-green-300">Add Tech Stack</span>
+          </Link>
+          <Link
+            to="/admin/comments"
+            className="flex items-center gap-3 p-4 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/30 rounded-lg transition-colors"
+          >
+            <span className="text-2xl">💬</span>
+            <span className="text-orange-300">Manage Comments</span>
           </Link>
         </div>
       </div>

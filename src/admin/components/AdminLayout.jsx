@@ -72,6 +72,14 @@ export default function AdminLayout({ children, title }) {
                     Certificates
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/admin/comments"
+                    className="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    Comments
+                  </Link>
+                </li>
               </ul>
             </div>
           </nav>
