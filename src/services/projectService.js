@@ -46,31 +46,24 @@ export const getProjects = async () => {
 
 export const getCertificates = async () => {
   try {
-    // Simple query without compound index requirement
-    const q = query(
-      collection(db, "certificates"),
-      orderBy("createdAt", "desc")
-    );
-
-    const snapshot = await getDocs(q);
+    // Get all certificates
+    const snapshot = await getDocs(collection(db, "certificates"));
 
     const certificates = snapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
-        // Map Firebase field names to component expected names
-        Img: data.img || data.Img,
-        title: data.title || data.tittle || data.Title || data.Tittle,
-        Pin: data.pin || data.Pin || false,
-        // Keep original field names for backward compatibility
-        ...data,
+        // Normalize: standard output fields
+        title: data.title || data.Title || "",
+        img: data.img || data.Img || data.image || data.Image || "",
+        isPinned: data.isPinned ?? data.IsPinned ?? data.pin ?? data.Pin ?? false,
       };
     });
 
-    // Sort pinned certificates first (client-side sorting)
+    // Sort: pinned first, then by createdAt (newest first)
     return certificates.sort((a, b) => {
-      const aPinned = a.Pin || a.pin || false;
-      const bPinned = b.Pin || b.pin || false;
+      const aPinned = a.isPinned || false;
+      const bPinned = b.isPinned || false;
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
       return 0;
@@ -88,10 +81,16 @@ export const getTechStacks = async () => {
 
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        // Normalize: priority name > title, icon > img (handles legacy + new format)
+        name: data.name || data.Name || data.title || data.Title || "",
+        icon: data.icon || data.Icon || data.img || data.Img || "",
+        category: data.category || data.Category || "",
+      };
+    });
   } catch (error) {
     console.error("Error fetching tech stacks:", error);
     return [];

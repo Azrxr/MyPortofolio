@@ -310,7 +310,7 @@ export default function Portofolio() {
                         data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
                         data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
                       >
-                        <Certificate ImgSertif={certificate.Img} title={certificate.title || certificate.tittle} />
+                        <Certificate ImgSertif={certificate.img} title={certificate.title} />
                       </div>
                     ))}
                   </div>
@@ -347,7 +347,7 @@ export default function Portofolio() {
                         data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
                         data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
                       >
-                        <TechStackIcon TechStackIcon={stack.img || stack.icon} Language={stack.title || stack.language} />
+                        <TechStackIcon TechStackIcon={stack.icon} Language={stack.name} />
                       </div>
                     ))}
                   </div>

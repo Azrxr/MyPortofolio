@@ -13,10 +13,14 @@ import {
 
 const CERTIFICATE_EXAMPLE = [
   {
+    title: "Certificate Name",
     img: "https://example.com/certificate1.jpg",
+    isPinned: false
   },
   {
+    title: "Another Certificate",
     img: "https://example.com/certificate2.jpg",
+    isPinned: true
   },
 ];
 
@@ -24,6 +28,7 @@ export default function CertificatesAdmin() {
   // State
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,12 +64,14 @@ export default function CertificatesAdmin() {
 
   function handleEdit(certificate) {
     setEditingId(certificate.id);
+    setTitle(certificate.title || "");
     setImageUrl(certificate.img || "");
     setActiveTab("form");
   }
 
   function handleCancelEdit() {
     setEditingId(null);
+    setTitle("");
     setImageUrl("");
     setActiveTab("list");
   }
@@ -81,16 +88,22 @@ export default function CertificatesAdmin() {
     setMessage({ text: "", type: "" });
 
     try {
-      const certData = { img: imageUrl };
+      const certData = { 
+        title: title,
+        img: imageUrl,
+        isPinned: false,
+      };
 
       if (editingId) {
-        await updateCertificate(editingId, certData);
+        // Don't override isPinned when editing
+        await updateCertificate(editingId, { title: title, img: imageUrl });
         showMessage("Certificate updated successfully!", "success");
       } else {
         await addCertificate(certData);
         showMessage("Certificate added successfully!", "success");
       }
 
+      setTitle("");
       setImageUrl("");
       setEditingId(null);
       setActiveTab("list");
@@ -119,15 +132,18 @@ export default function CertificatesAdmin() {
   async function handleBulkSubmit(data) {
     const result = await addCertificatesBulk(data);
     if (result.results.length > 0) {
-      fetchCertificates();
+      // Force refresh the list after bulk import
+      await fetchCertificates();
+      // Switch to list tab to show imported certificates
+      setActiveTab("list");
     }
     return result;
   }
 
   async function handleTogglePin(cert) {
     try {
-      const newPinStatus = !cert.pin;
-      await updateCertificate(cert.id, { pin: newPinStatus });
+      const newPinStatus = !cert.isPinned;
+      await updateCertificate(cert.id, { isPinned: newPinStatus });
       showMessage(
         newPinStatus
           ? "Certificate pinned successfully!"
@@ -214,7 +230,7 @@ export default function CertificatesAdmin() {
                 >
                   {/* Image */}
                   <div className="aspect-[4/3] bg-black/40 overflow-hidden relative">
-                    {cert.pin && (
+                    {cert.isPinned && (
                       <div className="absolute top-2 right-2 z-10 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                         📌 Pinned
                       </div>
@@ -222,7 +238,7 @@ export default function CertificatesAdmin() {
                     {cert.img ? (
                       <img
                         src={cert.img}
-                        alt="Certificate"
+                        alt={cert.title || "Certificate"}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />
                     ) : (
@@ -234,15 +250,21 @@ export default function CertificatesAdmin() {
 
                   {/* Actions */}
                   <div className="p-3 space-y-2">
+                    {/* Title Display */}
+                    {cert.title && (
+                      <p className="text-white text-sm font-medium truncate mb-2">
+                        {cert.title}
+                      </p>
+                    )}
                     <button
                       onClick={() => handleTogglePin(cert)}
                       className={`w-full px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                        cert.pin
+                        cert.isPinned
                           ? "bg-yellow-600 hover:bg-yellow-700 text-white"
                           : "bg-gray-600 hover:bg-gray-500 text-white"
                       }`}
                     >
-                      {cert.pin ? "📌 Unpin" : "📍 Pin"}
+                      {cert.isPinned ? "📌 Unpin" : "📍 Pin"}
                     </button>
                     <div className="flex gap-2">
                       <button
@@ -274,6 +296,20 @@ export default function CertificatesAdmin() {
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Title Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Certificate title (optional)"
+                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+
             <ImageUploader
               onUploadSuccess={handleImageUploaded}
               folder="portfolio/certificates"

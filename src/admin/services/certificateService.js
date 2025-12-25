@@ -16,6 +16,29 @@ import { db } from "../../firebase/firestore";
 const COLLECTION_NAME = "certificates";
 
 /**
+ * Helper function to normalize certificate data from Firestore
+ * Handles legacy fields and different case variations
+ * Standard output: title, img, isPinned
+ */
+function normalizeCertificateData(d) {
+  return {
+    // Core fields - check all variations
+    title: d.title || d.Title || "",
+    img: d.img || d.Img || d.image || d.Image || "",
+    isPinned: d.isPinned ?? d.IsPinned ?? d.pin ?? d.Pin ?? false,
+    
+    // Optional fields
+    issuer: d.issuer || d.Issuer || "",
+    date: d.date || d.Date || "",
+    link: d.link || d.Link || "",
+    
+    // Timestamps
+    createdAt: d.createdAt || d.created_at || null,
+    updatedAt: d.updatedAt || d.updated_at || null,
+  };
+}
+
+/**
  * Get total count of certificates
  */
 export async function getCertificatesCount() {
@@ -34,20 +57,29 @@ export async function getCertificatesCount() {
  */
 export async function getAllCertificates() {
   try {
-    const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    const certificates = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Get all certificates without orderBy to avoid issues with missing createdAt
+    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const certificates = snapshot.docs.map((docSnap) => {
+      const d = docSnap.data();
+      // Debug: uncomment to verify raw data
+      // console.log("Raw certificate data:", d);
+      return {
+        id: docSnap.id,
+        ...normalizeCertificateData(d),
+      };
+    });
     
-    // Sort pinned certificates first (client-side)
+    // Sort: pinned first, then by createdAt (newest first)
     return certificates.sort((a, b) => {
-      const aPinned = a.pin || false;
-      const bPinned = b.pin || false;
+      const aPinned = a.isPinned || false;
+      const bPinned = b.isPinned || false;
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
-      return 0;
+      
+      // Then sort by createdAt (newest first)
+      const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+      const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+      return bTime - aTime;
     });
   } catch (error) {
     console.error("Error getting certificates:", error);
@@ -63,7 +95,11 @@ export async function getCertificate(id) {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
+      const d = docSnap.data();
+      return { 
+        id: docSnap.id, 
+        ...normalizeCertificateData(d),
+      };
     }
     return null;
   } catch (error) {

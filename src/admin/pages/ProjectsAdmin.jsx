@@ -171,7 +171,10 @@ export default function ProjectsAdmin() {
   async function handleBulkSubmit(data) {
     const result = await addProjectsBulk(data);
     if (result.results.length > 0) {
-      fetchProjects();
+      // Force refresh the list after bulk import
+      await fetchProjects();
+      // Switch to list tab to show imported projects
+      setActiveTab("list");
     }
     return result;
   }

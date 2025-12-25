@@ -13,18 +13,18 @@ import {
 
 const TECH_STACK_EXAMPLE = [
   {
-    title: "React",
-    img: "https://example.com/react-logo.png",
+    name: "React",
+    icon: "https://example.com/react-logo.png",
   },
   {
-    title: "Firebase",
-    img: "https://example.com/firebase-logo.png",
+    name: "Firebase",
+    icon: "https://example.com/firebase-logo.png",
   },
 ];
 
 const INITIAL_FORM_STATE = {
-  title: "",
-  img: "",
+  name: "",
+  icon: "",
 };
 
 export default function TechStackAdmin() {
@@ -66,14 +66,14 @@ export default function TechStackAdmin() {
   }
 
   function handleImageUploaded(url) {
-    setFormData((prev) => ({ ...prev, img: url }));
+    setFormData((prev) => ({ ...prev, icon: url }));
   }
 
   function handleEdit(tech) {
     setEditingId(tech.id);
     setFormData({
-      title: tech.title || "",
-      img: tech.img || "",
+      name: tech.name || "",
+      icon: tech.icon || "",
     });
     setActiveTab("form");
   }
@@ -91,8 +91,8 @@ export default function TechStackAdmin() {
 
     try {
       const techData = {
-        title: formData.title,
-        img: formData.img,
+        name: formData.name,
+        icon: formData.icon,
       };
 
       if (editingId) {
@@ -131,7 +131,10 @@ export default function TechStackAdmin() {
   async function handleBulkSubmit(data) {
     const result = await addTechStacksBulk(data);
     if (result.results.length > 0) {
-      fetchTechStack();
+      // Force refresh the list after bulk import
+      await fetchTechStack();
+      // Switch to list tab to show imported tech stack
+      setActiveTab("list");
     }
     return result;
   }
@@ -210,10 +213,10 @@ export default function TechStackAdmin() {
                 >
                   {/* Logo */}
                   <div className="w-16 h-16 mx-auto mb-3 rounded-lg overflow-hidden bg-black/40">
-                    {tech.img ? (
+                    {tech.icon ? (
                       <img
-                        src={tech.img}
-                        alt={tech.title}
+                        src={tech.icon}
+                        alt={tech.name}
                         className="w-full h-full object-contain p-2"
                       />
                     ) : (
@@ -223,9 +226,9 @@ export default function TechStackAdmin() {
                     )}
                   </div>
 
-                  {/* Title */}
+                  {/* Name */}
                   <h3 className="text-sm font-medium text-white truncate mb-3">
-                    {tech.title}
+                    {tech.name}
                   </h3>
 
                   {/* Actions */}
@@ -241,7 +244,7 @@ export default function TechStackAdmin() {
                         setDeleteConfirm({
                           open: true,
                           id: tech.id,
-                          title: tech.title,
+                          title: tech.name,
                         })
                       }
                       className="flex-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
@@ -270,8 +273,8 @@ export default function TechStackAdmin() {
               </label>
               <input
                 type="text"
-                name="title"
-                value={formData.title}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 required
                 placeholder="e.g., React, Node.js, Python"
@@ -283,17 +286,17 @@ export default function TechStackAdmin() {
               onUploadSuccess={handleImageUploaded}
               folder="portfolio/tech-stack"
               label="Technology Logo"
-              currentImage={formData.img}
+              currentImage={formData.icon}
             />
 
-            {formData.img && (
+            {formData.icon && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Image URL
                 </label>
                 <input
                   type="url"
-                  value={formData.img}
+                  value={formData.icon}
                   readOnly
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
                 />

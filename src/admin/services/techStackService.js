@@ -16,6 +16,24 @@ import { db } from "../../firebase/firestore";
 const COLLECTION_NAME = "tech_stack";
 
 /**
+ * Helper function to normalize tech stack data from Firestore
+ * Handles legacy fields (title, img) and new fields (name, icon)
+ * Also handles PascalCase from bulk import
+ */
+function normalizeTechStackData(d) {
+  return {
+    // Core fields - priority: name > title, icon > img (handles legacy + new format)
+    name: d.name || d.Name || d.title || d.Title || "",
+    icon: d.icon || d.Icon || d.img || d.Img || "",
+    category: d.category || d.Category || "",
+    
+    // Timestamps
+    createdAt: d.createdAt || d.created_at || null,
+    updatedAt: d.updatedAt || d.updated_at || null,
+  };
+}
+
+/**
  * Get total count of tech stack items
  */
 export async function getTechStackCount() {
@@ -34,12 +52,24 @@ export async function getTechStackCount() {
  */
 export async function getAllTechStack() {
   try {
-    const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Get all tech stack without orderBy to avoid issues with missing createdAt
+    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const items = snapshot.docs.map((docSnap) => {
+      const d = docSnap.data();
+      // Debug: uncomment to verify raw data
+      // console.log("Raw tech stack data:", d);
+      return {
+        id: docSnap.id,
+        ...normalizeTechStackData(d),
+      };
+    });
+    
+    // Sort by createdAt (newest first)
+    return items.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+      const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+      return bTime - aTime;
+    });
   } catch (error) {
     console.error("Error getting tech stack:", error);
     throw error;
@@ -54,7 +84,11 @@ export async function getTechStack(id) {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
+      const d = docSnap.data();
+      return { 
+        id: docSnap.id, 
+        ...normalizeTechStackData(d),
+      };
     }
     return null;
   } catch (error) {
