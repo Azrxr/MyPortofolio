@@ -6,6 +6,7 @@ import FullscreenIcon from "@mui/icons-material/Fullscreen"
 const Certificate = ({ ImgSertif, title }) => {
 	const [open, setOpen] = useState(false)
 	const [imgFailed, setImgFailed] = useState(false)
+	const [imgLoading, setImgLoading] = useState(true)
 
 	const handleOpen = () => {
 		setOpen(true)
@@ -70,7 +71,37 @@ const Certificate = ({ ImgSertif, title }) => {
 							zIndex: 1,
 						},
 					}}>
-					{!imgFailed && ImgSertif ? (
+>
+						{/* Loading Spinner */}
+						{imgLoading && !imgFailed && ImgSertif && (
+							<Box
+								sx={{
+									position: "absolute",
+									inset: 0,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									backgroundColor: "rgba(0, 0, 0, 0.3)",
+									zIndex: 2,
+								}}
+							>
+								<Box
+									sx={{
+										width: 32,
+										height: 32,
+										border: "3px solid #a855f7",
+										borderTopColor: "transparent",
+										borderRadius: "50%",
+										animation: "spin 1s linear infinite",
+										"@keyframes spin": {
+											"0%": { transform: "rotate(0deg)" },
+											"100%": { transform: "rotate(360deg)" },
+										},
+									}}
+								/>
+							</Box>
+						)}
+						{!imgFailed && ImgSertif ? (
 						<img
 							className="certificate-image"
 							src={ImgSertif}
@@ -81,10 +112,15 @@ const Certificate = ({ ImgSertif, title }) => {
 								display: "block",
 								objectFit: "cover",
 								filter: "contrast(1.10) brightness(0.9) saturate(1.1)",
-								transition: "filter 0.3s ease",
+								transition: "filter 0.3s ease, opacity 0.3s ease",
+								opacity: imgLoading ? 0 : 1,
 							}}
 							onClick={handleOpen}
-							onError={() => setImgFailed(true)}
+							onLoad={() => setImgLoading(false)}
+							onError={() => {
+								setImgLoading(false);
+								setImgFailed(true);
+							}}
 						/>
 					) : (
 						<div

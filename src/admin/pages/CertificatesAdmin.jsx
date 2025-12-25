@@ -24,6 +24,83 @@ const CERTIFICATE_EXAMPLE = [
   },
 ];
 
+// Component CertificateCard with image loading animation
+function CertificateCard({ cert, onEdit, onDelete, onTogglePin }) {
+  const [imgLoading, setImgLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group">
+      {/* Image */}
+      <div className="aspect-[4/3] bg-black/40 overflow-hidden relative">
+        {cert.isPinned && (
+          <div className="absolute top-2 right-2 z-10 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+            📌 Pinned
+          </div>
+        )}
+        {cert.img && !imgError ? (
+          <>
+            {/* Loading Spinner */}
+            {imgLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-5">
+                <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            <img
+              src={cert.img}
+              alt={cert.title || "Certificate"}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${imgLoading ? 'opacity-0' : 'opacity-100'}`}
+              onLoad={() => setImgLoading(false)}
+              onError={() => {
+                setImgLoading(false);
+                setImgError(true);
+              }}
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500">
+            No Image
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="p-3 space-y-2">
+        {/* Title Display */}
+        {cert.title && (
+          <p className="text-white text-sm font-medium truncate mb-2">
+            {cert.title}
+          </p>
+        )}
+        <button
+          onClick={() => onTogglePin(cert)}
+          className={`w-full px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            cert.isPinned
+              ? "bg-yellow-600 hover:bg-yellow-700 text-white"
+              : "bg-gray-600 hover:bg-gray-500 text-white"
+          }`}
+        >
+          {cert.isPinned ? "📌 Unpin" : "📍 Pin"}
+        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(cert)}
+            className="flex-1 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(cert)}
+            className="flex-1 px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CertificatesAdmin() {
   // State
   const [certificates, setCertificates] = useState([]);
@@ -224,64 +301,13 @@ export default function CertificatesAdmin() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {certificates.map((cert) => (
-                <div
+                <CertificateCard
                   key={cert.id}
-                  className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group"
-                >
-                  {/* Image */}
-                  <div className="aspect-[4/3] bg-black/40 overflow-hidden relative">
-                    {cert.isPinned && (
-                      <div className="absolute top-2 right-2 z-10 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        📌 Pinned
-                      </div>
-                    )}
-                    {cert.img ? (
-                      <img
-                        src={cert.img}
-                        alt={cert.title || "Certificate"}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500">
-                        No Image
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="p-3 space-y-2">
-                    {/* Title Display */}
-                    {cert.title && (
-                      <p className="text-white text-sm font-medium truncate mb-2">
-                        {cert.title}
-                      </p>
-                    )}
-                    <button
-                      onClick={() => handleTogglePin(cert)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                        cert.isPinned
-                          ? "bg-yellow-600 hover:bg-yellow-700 text-white"
-                          : "bg-gray-600 hover:bg-gray-500 text-white"
-                      }`}
-                    >
-                      {cert.isPinned ? "📌 Unpin" : "📍 Pin"}
-                    </button>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(cert)}
-                        className="flex-1 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm({ open: true, id: cert.id })}
-                        className="flex-1 px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  cert={cert}
+                  onEdit={handleEdit}
+                  onDelete={(cert) => setDeleteConfirm({ open: true, id: cert.id })}
+                  onTogglePin={handleTogglePin}
+                />
               ))}
             </div>
           )}

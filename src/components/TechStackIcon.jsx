@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const TechStackIcon = ({ TechStackIcon, Language }) => {
   const [imgFailed, setImgFailed] = useState(false);
+  const [imgLoading, setImgLoading] = useState(true);
   const src = TechStackIcon || "";
 
   return (
@@ -9,13 +10,25 @@ const TechStackIcon = ({ TechStackIcon, Language }) => {
       <div className="relative">
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-0 group-hover:opacity-50 blur transition duration-300"></div>
         {!imgFailed && src ? (
-          <img
-            src={src}
-            alt={`${Language} icon`}
-            loading="lazy"
-            onError={() => setImgFailed(true)}
-            className="relative h-16 w-16 md:h-20 md:w-20 transform transition-transform duration-300 object-contain"
-          />
+          <>
+            {/* Loading Spinner */}
+            {imgLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            <img
+              src={src}
+              alt={`${Language} icon`}
+              loading="lazy"
+              onLoad={() => setImgLoading(false)}
+              onError={() => {
+                setImgLoading(false);
+                setImgFailed(true);
+              }}
+              className={`relative h-16 w-16 md:h-20 md:w-20 transform transition-all duration-300 object-contain ${imgLoading ? 'opacity-0' : 'opacity-100'}`}
+            />
+          </>
         ) : (
           <div className="relative h-16 w-16 md:h-20 md:w-20 flex items-center justify-center rounded-full bg-white/5 text-sm text-white font-semibold">
             {Language ? Language.split(' ').map(s => s[0]).slice(0,2).join('') : '?'}

@@ -27,6 +27,74 @@ const INITIAL_FORM_STATE = {
   icon: "",
 };
 
+// Komponen TechStackCard dengan animasi loading gambar
+function TechStackCard({ tech, onEdit, onDelete }) {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center group">
+      {/* Logo */}
+      <div className="w-16 h-16 mx-auto mb-3 rounded-lg overflow-hidden bg-black/40 relative">
+        {tech.icon ? (
+          <>
+            {/* Loading Spinner */}
+            {imageLoading && !imageError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {/* Image */}
+            <img
+              src={tech.icon}
+              alt={tech.name}
+              className={`w-full h-full object-contain p-2 transition-opacity duration-300 ${
+                imageLoading ? "opacity-0" : "opacity-100"
+              }`}
+              onLoad={() => setImageLoading(false)}
+              onError={() => {
+                setImageLoading(false);
+                setImageError(true);
+              }}
+            />
+            {/* Error State */}
+            {imageError && (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-xs">
+                Failed
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+            No Logo
+          </div>
+        )}
+      </div>
+
+      {/* Name */}
+      <h3 className="text-sm font-medium text-white truncate mb-3">
+        {tech.name}
+      </h3>
+
+      {/* Actions */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => onEdit(tech)}
+          className="flex-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(tech)}
+          className="flex-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TechStackAdmin() {
   // State
   const [techStack, setTechStack] = useState([]);
@@ -207,52 +275,18 @@ export default function TechStackAdmin() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {techStack.map((tech) => (
-                <div
+                <TechStackCard
                   key={tech.id}
-                  className="bg-white/5 border border-white/10 rounded-xl p-4 text-center group"
-                >
-                  {/* Logo */}
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-lg overflow-hidden bg-black/40">
-                    {tech.icon ? (
-                      <img
-                        src={tech.icon}
-                        alt={tech.name}
-                        className="w-full h-full object-contain p-2"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                        No Logo
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Name */}
-                  <h3 className="text-sm font-medium text-white truncate mb-3">
-                    {tech.name}
-                  </h3>
-
-                  {/* Actions */}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(tech)}
-                      className="flex-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        setDeleteConfirm({
-                          open: true,
-                          id: tech.id,
-                          title: tech.name,
-                        })
-                      }
-                      className="flex-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                  tech={tech}
+                  onEdit={handleEdit}
+                  onDelete={(tech) =>
+                    setDeleteConfirm({
+                      open: true,
+                      id: tech.id,
+                      title: tech.name,
+                    })
+                  }
+                />
               ))}
             </div>
           )}

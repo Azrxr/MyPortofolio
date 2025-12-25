@@ -69,8 +69,23 @@ const ProfileImage = memo(() => (
   </div>
 ));
 
-const StatCard = memo(({ icon: Icon, color, value, label, description, animation }) => (
-  <div data-aos={animation} data-aos-duration={1300} className="relative group">
+const StatCard = memo(({ icon: Icon, color, value, label, description, animation, link, tabIndex }) => {
+  const handleClick = () => {
+    // Navigate to Portofolio section
+    const element = document.getElementById('Portofolio');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      // Set tab after scroll with small delay to ensure component is ready
+      if (tabIndex !== undefined) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('setPortfolioTab', { detail: tabIndex }));
+        }, 500);
+      }
+    }
+  };
+
+  return (
+  <div data-aos={animation} data-aos-duration={1300} className="relative group cursor-pointer" onClick={handleClick}>
     <div className="relative z-10 bg-gray-900/50 backdrop-blur-lg rounded-2xl p-6 border border-white/10 overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl h-full flex flex-col justify-between">
       <div className={`absolute -z-10 inset-0 bg-gradient-to-br ${color} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}></div>
       
@@ -111,7 +126,8 @@ const StatCard = memo(({ icon: Icon, color, value, label, description, animation
       </div>
     </div>
   </div>
-));
+  );
+});
 
 const AboutPage = () => {
   // State for stats and settings
@@ -212,6 +228,8 @@ const AboutPage = () => {
       label: "Total Projects",
       description: "Innovative web solutions crafted",
       animation: "fade-right",
+      link: "#Portofolio",
+      tabIndex: 0, // Projects tab
     },
     {
       icon: Award,
@@ -220,6 +238,8 @@ const AboutPage = () => {
       label: "Certificates",
       description: "Professional skills validated",
       animation: "fade-up",
+      link: "#Portofolio",
+      tabIndex: 1, // Certificates tab
     },
     {
       icon: Globe,
@@ -228,6 +248,8 @@ const AboutPage = () => {
       label: "Years of Experience",
       description: "Continuous learning journey",
       animation: "fade-left",
+      link: "#Portofolio",
+      tabIndex: 2, // Tech Stack tab
     },
   ], [totalProjects, totalCertificates, YearExperience]);
 
@@ -353,13 +375,11 @@ const AboutPage = () => {
           <ProfileImage />
         </div>
 
-        <a href="#Portofolio">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 cursor-pointer">
-            {statsData.map((stat) => (
-              <StatCard key={stat.label} {...stat} />
-            ))}
-          </div>
-        </a>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+          {statsData.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
+        </div>
       </div>
 
       {/* CV Preview Modal */}

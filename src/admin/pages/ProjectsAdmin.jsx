@@ -43,6 +43,109 @@ const INITIAL_FORM_STATE = {
   pin: false,
 };
 
+// Component ProjectCard with image loading animation
+function ProjectCard({ project, onEdit, onDelete, onTogglePin }) {
+  const [imgLoading, setImgLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4">
+      {/* Thumbnail */}
+      <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-black/40 relative">
+        {project.img && !imgError ? (
+          <>
+            {/* Loading Spinner */}
+            {imgLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            <img
+              src={project.img}
+              alt={project.title}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoading ? 'opacity-0' : 'opacity-100'}`}
+              onLoad={() => setImgLoading(false)}
+              onError={() => {
+                setImgLoading(false);
+                setImgError(true);
+              }}
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500">
+            No Image
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="text-lg font-semibold text-white truncate">
+              {project.title}
+              {project.pin && (
+                <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">
+                  Pinned
+                </span>
+              )}
+            </h3>
+            <p className="text-sm text-gray-400 line-clamp-2">
+              {project.description}
+            </p>
+          </div>
+        </div>
+
+        {/* Tech Stack Tags */}
+        {project.techStack && project.techStack.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {project.techStack.slice(0, 5).map((tech, idx) => (
+              <span
+                key={idx}
+                className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded"
+              >
+                {tech}
+              </span>
+            ))}
+            {project.techStack.length > 5 && (
+              <span className="text-xs text-gray-500">
+                +{project.techStack.length - 5} more
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => onTogglePin(project)}
+          className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            project.pin
+              ? "bg-yellow-600 hover:bg-yellow-700 text-white"
+              : "bg-gray-600 hover:bg-gray-500 text-white"
+          }`}
+          title={project.pin ? "Unpin project" : "Pin project"}
+        >
+          {project.pin ? "📌 Unpin" : "📍 Pin"}
+        </button>
+        <button
+          onClick={() => onEdit(project)}
+          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(project)}
+          className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectsAdmin() {
   // State
   const [projects, setProjects] = useState([]);
@@ -263,96 +366,19 @@ export default function ProjectsAdmin() {
           ) : (
             <div className="grid gap-4">
               {projects.map((project) => (
-                <div
+                <ProjectCard
                   key={project.id}
-                  className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4"
-                >
-                  {/* Thumbnail */}
-                  <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-black/40">
-                    {project.img ? (
-                      <img
-                        src={project.img}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500">
-                        No Image
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white truncate">
-                          {project.title}
-                          {project.pin && (
-                            <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">
-                              Pinned
-                            </span>
-                          )}
-                        </h3>
-                        <p className="text-sm text-gray-400 line-clamp-2">
-                          {project.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Tech Stack Tags */}
-                    {project.techStack && project.techStack.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {project.techStack.slice(0, 5).map((tech, idx) => (
-                          <span
-                            key={idx}
-                            className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                        {project.techStack.length > 5 && (
-                          <span className="text-xs text-gray-500">
-                            +{project.techStack.length - 5} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => handleTogglePin(project)}
-                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                        project.pin
-                          ? "bg-yellow-600 hover:bg-yellow-700 text-white"
-                          : "bg-gray-600 hover:bg-gray-500 text-white"
-                      }`}
-                      title={project.pin ? "Unpin project" : "Pin project"}
-                    >
-                      {project.pin ? "📌 Unpin" : "📍 Pin"}
-                    </button>
-                    <button
-                      onClick={() => handleEdit(project)}
-                      className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        setDeleteConfirm({
-                          open: true,
-                          id: project.id,
-                          title: project.title,
-                        })
-                      }
-                      className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                  project={project}
+                  onEdit={handleEdit}
+                  onDelete={(project) =>
+                    setDeleteConfirm({
+                      open: true,
+                      id: project.id,
+                      title: project.title,
+                    })
+                  }
+                  onTogglePin={handleTogglePin}
+                />
               ))}
             </div>
           )}

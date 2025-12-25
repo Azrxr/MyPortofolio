@@ -109,6 +109,26 @@ export default function Portofolio() {
     fetchData();
   }, [fetchData]);
 
+  // Listen for tab change event from About page stats
+  useEffect(() => {
+    const handleTabChange = (event) => {
+      const tabIndex = event.detail;
+      if (typeof tabIndex === 'number' && tabIndex >= 0 && tabIndex <= 2) {
+        setValue(tabIndex);
+        if (swiperRef.current && swiperRef.current.slideTo) {
+          try {
+            swiperRef.current.slideTo(tabIndex);
+          } catch (e) {}
+        }
+      }
+    };
+
+    window.addEventListener('setPortfolioTab', handleTabChange);
+    return () => {
+      window.removeEventListener('setPortfolioTab', handleTabChange);
+    };
+  }, []);
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
     if (swiperRef.current && swiperRef.current.slideTo) {
