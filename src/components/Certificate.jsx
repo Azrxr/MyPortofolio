@@ -71,7 +71,6 @@ const Certificate = ({ ImgSertif, title }) => {
 							zIndex: 1,
 						},
 					}}>
->
 						{/* Loading Spinner */}
 						{imgLoading && !imgFailed && ImgSertif && (
 							<Box
