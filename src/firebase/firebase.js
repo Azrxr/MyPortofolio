@@ -29,6 +29,10 @@ export { app };
 // Only initialize Analytics in production to avoid console warnings in development
 let analytics = null;
 if (typeof window !== 'undefined' && import.meta.env.PROD) {
-  getAnalytics(app).then(a => analytics = a).catch(() => {});
+  try {
+    analytics = getAnalytics(app);
+  } catch (e) {
+    console.warn('Analytics initialization failed:', e);
+  }
 }
 export { analytics };
